@@ -16,6 +16,43 @@ const inputField = document.getElementById("searchInput");
 inputField.addEventListener("input", () => {
   // Optional: autocomplete logic
 });
+const searchInput = document.getElementById("searchInput");
+const suggestionsBox = document.getElementById("suggestions");
+
+searchInput.addEventListener("input", () => {
+  const inputText = searchInput.value.trim();
+
+  if (!inputText) {
+    suggestionsBox.style.display = "none";
+    suggestionsBox.innerHTML = "";
+    return;
+  }
+
+  const filtered = manualSuggestions.filter(item =>
+    item.toLowerCase().includes(inputText.toLowerCase())
+  );
+
+  suggestionsBox.innerHTML = "";
+
+  if (filtered.length === 0) {
+    suggestionsBox.style.display = "none";
+    return;
+  }
+
+  filtered.forEach(item => {
+    const div = document.createElement("div");
+    div.className = "suggestion-item";
+    div.textContent = item;
+    div.onclick = () => {
+      searchInput.value = item;
+      suggestionsBox.style.display = "none";
+    };
+    suggestionsBox.appendChild(div);
+  });
+
+  suggestionsBox.style.display = "block";
+});
+
 
   function performSearch() {
     const query = document.getElementById("searchInput").value.trim();
