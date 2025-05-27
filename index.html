@@ -82,17 +82,28 @@
       .then((response) => response.json())
       .then((data) => {
         const results = data.search_results || [];
+        console.log("Received results:", results);
+
+        const resultContainer = document.getElementById("results-container");
 
         if (results.length > 0) {
-          const resultContainer = document.getElementById("results-container");
           results.forEach(item => {
             const div = document.createElement("div");
             div.className = "result-card";
-            div.innerHTML = `<strong>${item.category}</strong><p>${item.text}</p>`;
+
+            if (typeof item === 'object') {
+              div.innerHTML = `
+                <h3>${item.title || "Untitled Result"}</h3>
+                <p>${item.content || JSON.stringify(item)}</p>
+              `;
+            } else {
+              div.textContent = item;
+            }
+
             resultContainer.appendChild(div);
           });
         } else {
-          document.getElementById("results-container").innerHTML = "<p>No results found.</p>";
+          resultContainer.innerHTML = "<p>No results found.</p>";
         }
 
         document.getElementById("results-section").style.display = "block";
