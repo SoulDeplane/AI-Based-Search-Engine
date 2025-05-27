@@ -5,69 +5,337 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SmartSeek AI</title>
   <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
     body {
       font-family: Arial, sans-serif;
       text-align: center;
       background: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb') no-repeat center center fixed;
       background-size: cover;
       color: black;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    h1 {
+      color: white;
+      font-size: 2.5rem;
+      margin-bottom: 40px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
     }
 
     .search-box {
-      margin-top: 150px;
+      position: relative;
+      width: 100%;
+      max-width: 500px;
+      margin-bottom: 40px;
     }
 
     input[type="text"] {
-      padding: 10px;
-      width: 300px;
-      border-radius: 10px;
+      width: 100%;
+      padding: 15px 20px;
+      border-radius: 25px;
       border: none;
+      font-size: 16px;
+      outline: none;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     }
 
     button {
+      position: absolute;
+      right: 5px;
+      top: 50%;
+      transform: translateY(-50%);
       padding: 10px 20px;
       border: none;
-      border-radius: 10px;
+      border-radius: 20px;
       background-color: #007bff;
       color: white;
       cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    /* FIXED SUGGESTIONS STYLING */
+    .suggestions-container {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background-color: white;
+      border: 1px solid #ddd;
+      border-top: none;
+      border-radius: 0 0 15px 15px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+      max-height: 300px;
+      overflow-y: auto;
+      z-index: 1000;
+      display: none;
+      margin-top: 5px;
+    }
+
+    .suggestions-container.show {
+      display: block;
+    }
+
+    .suggestion-item {
+      padding: 15px 20px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      font-size: 16px;
+      color: #333;
+      border-bottom: 1px solid #f0f0f0;
+      text-align: left;
+    }
+
+    .suggestion-item:last-child {
+      border-bottom: none;
+    }
+
+    .suggestion-item:hover {
+      background-color: #f8f9fa;
     }
 
     .section {
       margin-top: 30px;
-      background-color: rgba(255, 255, 255, 0.85);
-      padding: 20px;
-      border-radius: 10px;
-      width: 70%;
-      margin-left: auto;
-      margin-right: auto;
+      background-color: rgba(255, 255, 255, 0.95);
+      padding: 30px;
+      border-radius: 15px;
+      width: 90%;
+      max-width: 800px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
     }
 
     .result-card {
       margin-bottom: 20px;
-      padding: 10px;
-      border-bottom: 1px solid #ccc;
+      padding: 20px;
+      border-bottom: 1px solid #eee;
       text-align: left;
+      background: rgba(255,255,255,0.8);
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .result-card:last-child {
+      border-bottom: none;
+    }
+
+    .result-card h3 {
+      color: #007bff;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 2rem;
+      }
+      
+      .search-box {
+        max-width: 90%;
+      }
+      
+      .section {
+        width: 95%;
+        padding: 20px;
+      }
     }
   </style>
 </head>
 <body>
-  <br><br><br><br>
   <h1>SmartSeek AI</h1>
+  
   <div class="search-box">
-    <input type="text" id="searchInput" placeholder="Enter your query..." />
+    <input type="text" id="searchInput" placeholder="Enter your query..." autocomplete="off" />
     <button onclick="performSearch()">Search</button>
+    <div id="suggestions" class="suggestions-container"></div>
   </div>
-
+  
   <div id="results-section" class="section" style="display: none;">
     <h2>Search Results</h2>
     <div id="results-container"></div>
   </div>
 
   <script>
+    const manualSuggestions = [
+      // Health & Wellness
+      "heart health tips",
+      "mental wellness strategies",
+      "healthy diet plans",
+      "weight loss methods",
+      "yoga benefits",
+      "exercise routines",
+      "sleep improvement tips",
+      "stress management techniques",
+      "meditation for beginners",
+      "immune system boosters",
+      "natural remedies",
+      "nutrition facts",
+      
+      // Technology & AI
+      "artificial intelligence",
+      "machine learning basics",
+      "AI in healthcare",
+      "deep learning tutorial",
+      "neural networks explained",
+      "chatbot development",
+      "automation tools",
+      "robotics applications",
+      "blockchain technology",
+      "quantum computing",
+      "cybersecurity tips",
+      "cloud computing benefits",
+      
+      // Programming & Development
+      "web development guide",
+      "Python programming",
+      "JavaScript tutorial",
+      "React framework",
+      "mobile app development",
+      "database design",
+      "API development",
+      "software testing",
+      "version control git",
+      "debugging techniques",
+      
+      // Science & Environment
+      "climate change impact",
+      "renewable energy sources",
+      "air pollution effects",
+      "sustainable living tips",
+      "ocean conservation",
+      "wildlife protection",
+      "solar power benefits",
+      "recycling methods",
+      "carbon footprint reduction",
+      "green technology",
+      
+      // Business & Finance
+      "investment strategies",
+      "cryptocurrency basics",
+      "stock market analysis",
+      "business plan template",
+      "digital marketing tips",
+      "startup funding options",
+      "personal finance management",
+      "retirement planning",
+      "tax saving strategies",
+      "entrepreneurship guide",
+      
+      // Education & Learning
+      "online learning platforms",
+      "study techniques",
+      "language learning apps",
+      "skill development courses",
+      "memory improvement methods",
+      "time management tips",
+      "critical thinking skills",
+      "research methodology",
+      "presentation skills",
+      "career development",
+      
+      // Lifestyle & Personal
+      "productivity hacks",
+      "work life balance",
+      "home organization tips",
+      "cooking recipes",
+      "travel planning guide",
+      "photography tips",
+      "gardening basics",
+      "pet care advice",
+      "relationship advice",
+      "personal growth strategies",
+      
+      // Current Trends & Popular Topics
+      "remote work setup",
+      "social media marketing",
+      "electric vehicles",
+      "space exploration news",
+      "virtual reality applications",
+      "sustainable fashion",
+      "minimalist lifestyle",
+      "mindfulness practices",
+      "digital detox methods",
+      "smart home technology"
+    ];
+
+    const searchInput = document.getElementById("searchInput");
+    const suggestionsContainer = document.getElementById("suggestions");
+
+    // Show suggestions as user types
+    searchInput.addEventListener("input", function() {
+      const inputText = this.value.trim();
+      
+      if (inputText === "") {
+        hideSuggestions();
+        return;
+      }
+
+      const filtered = manualSuggestions.filter(item =>
+        item.toLowerCase().includes(inputText.toLowerCase())
+      ).slice(0, 6); // Limit to 6 suggestions
+
+      if (filtered.length > 0) {
+        showSuggestions(filtered);
+      } else {
+        hideSuggestions();
+      }
+    });
+
+    function showSuggestions(suggestions) {
+      suggestionsContainer.innerHTML = "";
+      
+      suggestions.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "suggestion-item";
+        div.textContent = item;
+        
+        div.addEventListener("click", function() {
+          searchInput.value = item;
+          hideSuggestions();
+        });
+        
+        suggestionsContainer.appendChild(div);
+      });
+      
+      suggestionsContainer.classList.add("show");
+    }
+
+    function hideSuggestions() {
+      suggestionsContainer.classList.remove("show");
+    }
+
+    // Hide suggestions when clicking outside
+    document.addEventListener("click", function(event) {
+      if (!searchInput.contains(event.target) && !suggestionsContainer.contains(event.target)) {
+        hideSuggestions();
+      }
+    });
+
+    // Handle Enter key
+    searchInput.addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        performSearch();
+      }
+    });
+
     function performSearch() {
-      const query = document.getElementById("searchInput").value.trim();
+      const query = searchInput.value.trim();
       if (!query) return;
+
+      // Hide suggestions when searching
+      hideSuggestions();
 
       document.getElementById("results-container").innerHTML = "";
       document.getElementById("results-section").style.display = "none";
@@ -92,12 +360,27 @@
             div.className = "result-card";
 
             if (typeof item === 'object') {
+              // Clean the text content by removing source information
+              let cleanText = item.text || item.content || item;
+              
+              // Remove "From [filename] – text: " pattern
+              if (typeof cleanText === 'string') {
+                cleanText = cleanText.replace(/^From\s+\w+.*?\.csv\s*–\s*text:\s*/i, '');
+                cleanText = cleanText.replace(/^From\s+.*?\s*–\s*text:\s*/i, '');
+              }
+              
               div.innerHTML = `
-                <h3>${item.title || "Untitled Result"}</h3>
-                <p>${item.content || JSON.stringify(item)}</p>
+                <h3>${item.title || "Search Result"}</h3>
+                <p>${cleanText}</p>
               `;
             } else {
-              div.textContent = item;
+              // Handle string results - clean them too
+              let cleanText = item;
+              if (typeof cleanText === 'string') {
+                cleanText = cleanText.replace(/^From\s+\w+.*?\.csv\s*–\s*text:\s*/i, '');
+                cleanText = cleanText.replace(/^From\s+.*?\s*–\s*text:\s*/i, '');
+              }
+              div.innerHTML = `<p>${cleanText}</p>`;
             }
 
             resultContainer.appendChild(div);
